@@ -13,8 +13,14 @@ function(make_llvm_target module)
   add_library(LLVM::${module} INTERFACE IMPORTED GLOBAL)
   target_include_directories(LLVM::${module} SYSTEM INTERFACE ${LLVM_INCLUDE_DIRS})
   target_compile_definitions(LLVM::${module} INTERFACE ${LLVM_DEFINITIONS})
-  # LLVM_ENABLE_RTTI is ON or OFF accordingly
-  target_compile_options(LLVM::${module} INTERFACE -fno-rtti)
+  
+  if(NOT (LLVM_REQUIRES_RTTI OR LLVM_ENABLE_RTTI))
+    if(MSVC)
+      target_compile_options(LLVM::${module} INTERFACE "/GR-")
+    elseif(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang" OR ${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
+      target_compile_options(LLVM::${module} INTERFACE "-fno-rtti")
+    endif()
+  endif()
 
   llvm_map_components_to_libnames(llvm_libs ${module})
   target_link_libraries(LLVM::${module} INTERFACE ${llvm_libs})
